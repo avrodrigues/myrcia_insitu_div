@@ -1,0 +1,28 @@
+---
+output: github_document
+---
+
+<!-- README.md is generated from README.Rmd. Please edit that file -->
+
+```{r, include = FALSE}
+knitr::opts_chunk$set(
+  collapse = TRUE,
+  comment = "#>"
+)
+```
+
+# Biogeographical history explains the spatial distribution of *Myrcia* diversity in the Atlantic Forest
+
+<!-- badges: start -->
+<!-- badges: end -->
+
+Here you find code and data to reproduce the analysis
+
+## Repository structure
+
+```{r, echo=FALSE}
+
+fs::dir_tree(recurse = 1)
+```
+
+
