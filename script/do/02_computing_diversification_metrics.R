@@ -42,7 +42,7 @@ node.area <-
   )
 
 # calculating age arrival 
-age_comm_recent <- age_arrival(
+age_comm_recent <- calc_age_arrival(
   W = myrcia_comp, 
   tree = myrcia_tree, 
   ancestral.area = node.area, 
@@ -50,7 +50,7 @@ age_comm_recent <- age_arrival(
   age.no.ancestor = "recent"
   ) 
 
-age_comm_half <- age_arrival(
+age_comm_half <- calc_age_arrival(
   W = myrcia_comp, 
   tree = myrcia_tree, 
   ancestral.area = node.area, 
@@ -60,7 +60,7 @@ age_comm_half <- age_arrival(
 
 # calculating in situ diversification
 
-myrcia_diversification <- db_diversification(
+myrcia_diversification <- calc_insitu_diversification(
   W = myrcia_comp,
   tree = myrcia_tree, 
   ancestral.area = node.area, 
@@ -69,7 +69,7 @@ myrcia_diversification <- db_diversification(
   type = "equal.splits"
   )
 
-myrcia_disp <- dispersal_from(
+myrcia_disp <- calc_dispersal_from(
   W = myrcia_comp,
   tree = myrcia_tree, 
   ancestral.area = node.area, 
@@ -82,7 +82,7 @@ div_age_df <- data.frame(
   age_recent = age_comm_recent$mean_age_per_assemblage$mean_age_arrival,
   age_halfedge = age_comm_half$mean_age_per_assemblage$mean_age_arrival,
   div_jetz = myrcia_diversification$Jetz_harmonic_mean_site,
-  div_mb_jetz = myrcia_diversification$model_based_Jetz_harmonic_mean_site 
+  div_mb_jetz = myrcia_diversification$insitu_Jetz_harmonic_mean_site 
   ) %>% 
   mutate(
     div_insitu_prop = div_mb_jetz/div_jetz

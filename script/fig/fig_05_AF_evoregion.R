@@ -137,12 +137,12 @@ ggsave(
   here("fig", "map_insert_af.png"),
   map_insert_af, 
   width = 5,
-  height = 7
+  height = 6.5
 )
 
 ggsave(
   here("fig", "map_insert_evo.png"),
   map_insert_evo, 
   width = 5,
-  height = 5
+  height = 4.5
 )

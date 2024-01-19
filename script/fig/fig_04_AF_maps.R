@@ -212,7 +212,7 @@ chart_insitu <- wrap_plots(map_list_leg_in) +
   )
 
 ggsave(
-  here("fig", "chart_insitu.png"), 
+  here("fig", "chart_insitu_v2.png"), 
   chart_insitu, 
   width = 8,
   height = 11.5
@@ -242,7 +242,7 @@ df.metareg.cont <- data.frame(
   SES.MPD = mpd_01)
 
 # defining colors
-rgb.color  <- rgb(div_01, age_01, div_01)
+rgb.color  <- rgb(age_01, div_01, mpd_01)
 rgb.color.fill <- (unique(rgb.color))
 names(rgb.color.fill) <- rgb.color.fill
 
@@ -251,7 +251,7 @@ metrics_AF$summ_color <- rgb.color
 metrics_AF %>% 
   ggplot() + 
   #coast_layer +
-  geom_sf(data = AF_sf, fill = NA, color = greys[7]) +
   geom_raster(aes(x = x, y = y, fill = summ_color), show.legend = F) +
+  geom_sf(data = AF_sf, fill = NA, color = greys[1]) +
   scale_fill_manual(values = rgb.color.fill) 
   theme_map_af

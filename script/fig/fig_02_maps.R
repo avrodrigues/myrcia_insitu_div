@@ -52,7 +52,7 @@ evo_metrics_df %>%
   geom_raster(aes(x = x, y = y, fill = age_halfedge)) +
   geom_sf(data = sf_coast, color = greys[3]) +
   scale_fill_stepsn(
-    n.breaks = 5,
+    n.breaks = 6,
     name = "Mean age<br>of assemblage" ,
     colours = rcartocolor::carto_pal(5, "BluYl"), 
     guide = guide_colorsteps(show.limits = T)

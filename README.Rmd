@@ -25,4 +25,5 @@ Here you find code and data to reproduce the analysis
 fs::dir_tree(recurse = 1)
 ```
 
+All data in `data` folder (except the ones in `data/shape`) was copied from the repo https://github.com/avrodrigues/myrcia_hist_biogeography ([DOI: 10.5281/zenodo.10377169] (https://zenodo.org/records/10377169)) and was used before in the analysis of biogeogaphy history of Myrcia in the paper Rodrigues and Duarte 2023 [Mapping species richness and evolutionary regions of the genus Myrcia](https://doi.org/10.1111/jbi.14791)
 

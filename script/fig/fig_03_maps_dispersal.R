@@ -53,7 +53,7 @@ disp_af_long <-
     .before = B
   ) %>% 
   pivot_longer(
-    cols = 3:8,
+    cols = 3:6,
     names_to = "disp_from",
     values_to = "disp_prop"
   ) %>% 
@@ -134,7 +134,7 @@ disp_af_long %>%
 
 
 ggsave(
-  here("fig", "disp_from.png"), 
+  here("fig", "disp_from_v2.png"), 
   map_disp, 
   width = 7.2, 
   height = 9

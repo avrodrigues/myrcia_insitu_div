@@ -159,8 +159,9 @@ evo_metrics_df %>%
   labs(x = "SES mpd", y = "Proportional In situ DR")   
 
 evo_metrics_df %>% 
-  ggplot(aes(x = div_jetz, y = div_insitu_prop)) +
+  ggplot(aes(x = div_jetz, y = div_insitu_prop, color = evoregion)) +
   geom_point() +
+  scale_color_manual(values = colors_evo, name = "Evoregions") +
   labs(x = "Diversification rate", y = "Proportional In situ DR")     
 
 
