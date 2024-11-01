@@ -219,39 +219,3 @@ ggsave(
 )
 
 
-# New map - 3D ---------------------------
-
-(metrics_AF$age_recent/max(metrics_AF$age_recent))|> hist()
-
-metrics_AF$div_insitu_prop|> hist()
-
-(metrics_AF$ses_mpd/(max(abs(metrics_AF$ses_mpd)))) |> hist()
-
-max_sesmpd <- (max(abs(metrics_AF$ses_mpd)))
-min_sesmpd <- max_sesmpd*-1
-range_sesmpd <- max_sesmpd-min_sesmpd
-
-mpd_01 <- ((metrics_AF$ses_mpd - min_sesmpd)/range_sesmpd)
-age_01 <- (metrics_AF$age_recent/max(metrics_AF$age_recent))
-div_01 <- metrics_AF$div_insitu_prop
-
-df.metareg.cont <- data.frame(
-  
-  Div = metrics_AF$div_insitu_prop, 
-  Age = mpd_01,
-  SES.MPD = mpd_01)
-
-# defining colors
-rgb.color  <- rgb(age_01, div_01, mpd_01)
-rgb.color.fill <- (unique(rgb.color))
-names(rgb.color.fill) <- rgb.color.fill
-
-metrics_AF$summ_color <- rgb.color
-
-metrics_AF %>% 
-  ggplot() + 
-  #coast_layer +
-  geom_raster(aes(x = x, y = y, fill = summ_color), show.legend = F) +
-  geom_sf(data = AF_sf, fill = NA, color = greys[1]) +
-  scale_fill_manual(values = rgb.color.fill) 
-  theme_map_af
