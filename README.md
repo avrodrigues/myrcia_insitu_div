@@ -4,6 +4,7 @@
 # Biogeographical history of *Myrcia* diversity
 
 <!-- badges: start -->
+[![DOI](https://zenodo.org/badge/540554931.svg)](https://doi.org/10.5281/zenodo.14025002)
 <!-- badges: end -->
 
 Here you find code and data to reproduce the analysis of the manuscript
