@@ -1,52 +1,52 @@
 
 <!-- README.md is generated from README.Rmd. Please edit that file -->
 
-# Biogeographical history explains the spatial distribution of *Myrcia* diversity in the Atlantic Forest
+# Biogeographical history of *Myrcia* diversity
 
 <!-- badges: start -->
 <!-- badges: end -->
 
-Here you find code and data to reproduce the analysis
+Here you find code and data to reproduce the analysis of the manuscript
+entitled “A complex biogeographical history explains the spatial
+distribution of *Myrcia* diversity in the Atlantic Forest”
+
+## How to use the repository
+
+Download the repository or clone it using the git command:
+
+`git clone https://github.com/avrodrigues/myrcia_insitu_div.git`
+
+## Setting the environment
+
+We used the R version 4.2.2 and the [{renv}
+package](https://rstudio.github.io/renv/index.html) v0.17.3 to create a
+reproducible environment for the analysis.
+
+After download the repository, you should run the code
+`renv::restore()`. It will install all the packages needed with the same
+version we used to produce the code and the analysis. Since it has
+several packages to be installed, this should take some time to be
+concluded.
 
 ## Repository structure
 
     #> .
     #> ├── data
-    #> │   ├── 000_areas_myrcia_phy_consensus.data
-    #> │   ├── 000_phy_myrcia_cleaned_consensus.new
-    #> │   ├── evoregions_stand_names_df.csv
-    #> │   ├── list_results_models_biogeobears_phy_consenso.rds
-    #> │   ├── res_evoregion_phy_consensus.rds
-    #> │   ├── shape
-    #> │   ├── W.csv
-    #> │   └── W_xy.csv
     #> ├── fig
-    #> │   ├── chart_insitu.png
-    #> │   ├── disp_from.png
-    #> │   ├── fig2_evoregions.svg
-    #> │   ├── fig_2_evoregions.png
-    #> │   ├── map_evo_af.png
-    #> │   ├── map_insert_af.png
-    #> │   └── map_insert_evo.png
     #> ├── LICENSE
     #> ├── myrcia_insitu_div.Rproj
     #> ├── output
-    #> │   ├── div_age_df.rds
-    #> │   ├── evo_metrics_df.rds
-    #> │   ├── myrcia_disp.rds
-    #> │   └── ses_mpd_myrcia.rds
     #> ├── README.md
     #> ├── README.Rmd
+    #> ├── renv
+    #> ├── renv.lock
     #> └── script
-    #>     ├── 99_01_extra_sink_source_areas.R
-    #>     ├── 99_02_extra_figs.R
-    #>     ├── do
-    #>     └── fig
 
-All data in `data` folder (except the ones in `data/shape`) was copied
-from the repo <https://github.com/avrodrigues/myrcia_hist_biogeography>
-(\[DOI: 10.5281/zenodo.10377169\]
-(<https://zenodo.org/records/10377169>)) and was used before in the
-analysis of biogeogaphy history of Myrcia in the paper Rodrigues and
-Duarte 2023 [Mapping species richness and evolutionary regions of the
-genus Myrcia](https://doi.org/10.1111/jbi.14791)
+### Main folders
+
+In `data` you find all the data necessary to run the analysis and
+compute the diversity and stability metrics.  
+In `script` you find the code for the analysis and figures.  
+In `output` you find the output metrics used in the study. s In `fig`
+you find the figures and images used to produce the figures in the
+manuscript.
