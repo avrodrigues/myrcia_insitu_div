@@ -47,6 +47,6 @@ concluded.
 In `data` you find all the data necessary to run the analysis and
 compute the diversity and stability metrics.  
 In `script` you find the code for the analysis and figures.  
-In `output` you find the output metrics used in the study. s In `fig`
-you find the figures and images used to produce the figures in the
-manuscript.
+In `output` you find the output metrics used in the study.  
+In `fig` you find the figures and images used to produce the figures in
+the manuscript.
