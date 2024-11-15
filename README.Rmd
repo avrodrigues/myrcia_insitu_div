@@ -18,12 +18,6 @@ knitr::opts_chunk$set(
 
 Here you find code and data to reproduce the analysis of the manuscript entitled "A complex biogeographical history explains the spatial distribution of *Myrcia* diversity in the Atlantic Forest"
 
-## How to use the repository
-
-Download the repository or clone it using the git command:
-
-`git clone https://github.com/avrodrigues/myrcia_insitu_div.git`
-
 ## Setting the environment
 
 We used the R version 4.2.2 and the [{renv} package](https://rstudio.github.io/renv/index.html) v0.17.3 to create a reproducible environment for the analysis.
