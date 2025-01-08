@@ -203,7 +203,7 @@ arw_df <- data.frame(
   y = 0, 
   xend =  pca$rotation[,1],
   yend = pca$rotation[,2], 
-  label = c("Age", "In Situ\nSpeciation", "SES MPD")
+  label = c("Age", "In Situ\nDiversification", "SES MPD")
 )
 
 t_adjust_pos <- 1.6
