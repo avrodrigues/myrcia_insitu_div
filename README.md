@@ -4,17 +4,12 @@
 # Biogeographical history of *Myrcia* diversity
 
 <!-- badges: start -->
+
 <!-- badges: end -->
 
 Here you find code and data to reproduce the analysis of the manuscript
 entitled “A complex biogeographical history explains the spatial
 distribution of *Myrcia* diversity in the Atlantic Forest”
-
-## How to use the repository
-
-Download the repository or clone it using the git command:
-
-`git clone https://github.com/avrodrigues/myrcia_insitu_div.git`
 
 ## Setting the environment
 
