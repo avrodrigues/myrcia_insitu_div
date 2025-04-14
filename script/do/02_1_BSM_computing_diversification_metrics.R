@@ -142,16 +142,68 @@ div_insitu_prop_df <- div_mb_jetz_df/div_jetz_df
 write.csv(div_insitu_prop_df, "output/bg_stochastic_map/div_insitu_prop_df.csv")
 
 
-## to be done
+## Dispersal from
 
-# plan(multisession, workers = 10)
-# 
-# 
-# myrcia_disp <- calc_dispersal_from(
-#   W = myrcia_comp,
-#   tree = myrcia_tree, 
-#   ancestral.area = node.area, 
-#   biogeo = evo_mtx
-# )
-# 
+plan(multisession, workers = 10)
 
+
+l_myrcia_disp <- future_map(seq_along(list_node_area), function(i) {
+  
+ calc_dispersal_from(
+    W = myrcia_comp,
+    tree = myrcia_tree,
+    ancestral.area = list_node_area[[i]],
+    biogeo = evo_mtx
+  )
+  
+})
+plan(sequential)
+
+
+
+range_names_disp_df <- map(l_myrcia_disp, colnames) %>% 
+  unlist() %>% 
+  unique() %>% 
+  sort()
+
+
+disp_df <- data.frame(rowname = integer())
+
+for(range in range_names_disp_df){
+  
+  disp_df[,range] <- numeric()
+}
+
+
+for(i in seq_along(l_myrcia_disp)){
+  
+  bsm_idx <- paste0("bsm_", i)
+  df <- as.data.frame(l_myrcia_disp[[i]]) %>% 
+    select(any_of(range_names_disp_df)) %>% 
+    rownames_to_column() %>% 
+    mutate(rowname = as.integer(rowname))
+  
+  disp_df <- disp_df %>% add_row(df)
+  
+}
+
+
+disp_from_df_mean <- disp_df %>% 
+  group_by(rowname) %>% 
+  summarize(
+    across(all_of(range_names_disp_df), ~mean(.x, na.rm = T), .names = "mean_{.col}")
+  )
+
+disp_from_df_sd <- disp_df %>% 
+  group_by(rowname) %>% 
+  summarize(
+    across(all_of(range_names_disp_df), ~sd(.x, na.rm = T), .names = "sd_{.col}")
+  )
+
+
+disp_from_data <- list(
+  disp_from_df_mean, 
+  disp_from_df_sd
+)
+
+saveRDS(disp_from_data, here("output", "myrcia_disp_BSM.rds"))
