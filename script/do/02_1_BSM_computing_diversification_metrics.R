@@ -8,8 +8,8 @@ library(ape)
 library(dplyr)
 library(furrr)
 
-source("function/calc_bsm.R")
-source("function/get_bsm_node_area.R")
+# source("function/calc_bsm.R")
+# source("function/get_bsm_node_area.R")
 
 # load data ---------------------------------------------------------------
 
@@ -48,89 +48,100 @@ bsm_res <- calc_bsm(
 
 # assemblage age and in situ diversification ---------------------------------
 
+# prepare the insertions -------------------------------------------------------
+## get_insert_df ----
+
+insert_list <- get_insert_df(
+  bsm_res,
+  phyllip.file = geog.path,
+  max.range.size = resDECJ$inputs$max_range_size
+)
+
+
 # getting the ancestral range area for each node 
 list_node_area <- get_bsm_node_area(
-  result_bsm = bsm_res, 
+  bsm = bsm_res, 
   BioGeoBEARS.data = resDECJ,
   phyllip.file = geog.path,
   tree.path = phy.path,
-  max.range.size = 2
+  max.range.size = resDECJ$inputs$max_range_size
 )
+
+# insert_nodes ----
+
+bsm_tree <- insert_nodes(
+  tree =  myrcia_tree, 
+  inserts = insert_list, 
+  node_area = list_node_area)
+
 
 # calculating age arrival 
 plan(multisession, workers = 10)
 
-l_age_comm_recent <- future_map(seq_along(list_node_area), function(i) {
-  calc_age_arrival(
-    W = myrcia_comp, 
-    tree = myrcia_tree, 
-    ancestral.area = list_node_area[[i]], 
-    biogeo = evo_mtx,
-    age.no.ancestor = "recent"
-  ) 
+l_age_comm <- future_map(bsm_tree, function(bsm_map){
+  
+  tree <- bsm_map$phylo
+  #tree$node.label <- NULL
+  anc_area <- bsm_map$node_area %>% as.matrix()
+  
+  Herodotools::calc_age_arrival(W = myrcia_comp, 
+                                tree = tree, 
+                                ancestral.area = anc_area, 
+                                biogeo = evo_mtx) 
+  
 })
+
 plan(sequential)
 
 l_avg_age_recent <- purrr::map(l_age_comm_recent, function(x) x$mean_age_per_assemblage)
 avg_age_recent_df <- purrr::list_cbind(l_avg_age_recent)
 names(avg_age_recent_df) <- paste0("bsm_", 1:ncol(avg_age_recent_df))
 
-# save dataframe
-write.csv(avg_age_recent_df, "output/bg_stochastic_map/avg_age_recent_df.csv")
+# Organize results
+age_bsm_mtx <- sapply(
+  l_age_comm, 
+  function(x) x$mean_age_per_assemblage$mean_age_arrival
+)
+
+# summarize results
+
+bsm_metrics <- cbind(
+  evo_df, 
+  age_bsm_mean = rowMeans(age_bsm_mtx),
+  age_bsm_sd = apply(age_bsm_mtx, 1, sd)
+)
 
 
-plan(multisession, workers = 10)
-l_age_comm_half <- future_map(seq_along(list_node_area), function(i) {
- calc_age_arrival(
-    W = myrcia_comp, 
-    tree = myrcia_tree, 
-    ancestral.area = list_node_area[[i]], 
-    biogeo = evo_mtx,
-    age.no.ancestor = "half.edge"
-  ) 
-})
-plan(sequential)
-
-l_avg_age_half <- purrr::map(l_age_comm_half, function(x) x$mean_age_per_assemblage)
-avg_age_half_df <- purrr::list_cbind(l_avg_age_half)
-names(avg_age_half_df) <- paste0("bsm_", 1:ncol(avg_age_half_df))
-
-# save dataframe
-write.csv(avg_age_half_df, "output/bg_stochastic_map/avg_age_half_df.csv")
-
-# calculating in situ diversification
+# calculating in situ diversification -----
 plan(multisession, workers = 10)
 
-l_myrcia_diversification <- future_map(seq_along(list_node_area), function(i) {
-
-myrcia_diversification <- calc_insitu_diversification(
-  W = myrcia_comp,
-  tree = myrcia_tree, 
-  ancestral.area = list_node_area[[i]], 
-  biogeo = evo_mtx, 
-  diversification = "jetz",
-  type = "equal.splits"
+l_div_insitu <- future_map(bsm_tree, function(bsm_map){
+  
+  tree <- bsm_map$phylo
+  #tree$node.label <- NULL
+  anc_area <- bsm_map$node_area %>% as.matrix()
+  
+  Herodotools::calc_insitu_diversification(
+    W = myrcia_comp,
+    tree = tree, 
+    ancestral.area = anc_area, 
+    biogeo = evo_mtx, 
+    diversification = "jetz",
+    type = "equal.splits"
   )
-
+  
 })
-plan(sequential)
 
 
-# div_jetz = myrcia_diversification$Jetz_harmonic_mean_site,
-# div_mb_jetz = myrcia_diversification$insitu_Jetz_harmonic_mean_site 
-# ) %>% 
-#   mutate(
-#     div_insitu_prop = div_mb_jetz/div_jetz
-#   )
 
-l_div_jetz <- purrr::map(l_myrcia_diversification, function(x) 
+l_div_jetz <- purrr::map(l_div_insitu, function(x) 
   data.frame(div_jetz = x$Jetz_harmonic_mean_site))
 
 div_jetz_df <- purrr::list_cbind(l_div_jetz)
 names(div_jetz_df) <- paste0("bsm_", 1:ncol(div_jetz_df))
 
 
-l_div_mb_jetz <- purrr::map(l_myrcia_diversification, function(x) 
+l_div_mb_jetz <- purrr::map(l_div_insitu, function(x) 
   data.frame(div_mb_jetz = x$insitu_Jetz_harmonic_mean_site))
 
 div_mb_jetz_df <- purrr::list_cbind(l_div_mb_jetz)
@@ -138,30 +149,41 @@ names(div_mb_jetz_df) <- paste0("bsm_", 1:ncol(div_mb_jetz_df))
 
 div_insitu_prop_df <- div_mb_jetz_df/div_jetz_df
 
+
+bsm_metrics <- cbind(
+  bsm_metrics, 
+  div_bsm_mean = rowMeans(div_insitu_prop_df),
+  div_bsm_sd = apply(div_insitu_prop_df, 1, sd)
+)
+
 # save dataframe
-write.csv(div_insitu_prop_df, "output/bg_stochastic_map/div_insitu_prop_df.csv")
+write.csv(bsm_metrics, "output/bg_stochastic_map/bsm_metrics.csv")
 
 
-## Dispersal from
+## Dispersal from -----------------------------------------------------------
 
 plan(multisession, workers = 10)
 
 
-l_myrcia_disp <- future_map(seq_along(list_node_area), function(i) {
+l_myrcia_disp <- future_map(bsm_tree, function(bsm_map){
   
- calc_dispersal_from(
+  tree <- bsm_map$phylo
+  anc_area <- bsm_map$node_area %>% as.matrix()
+  
+  Herodotools::calc_dispersal_from(
     W = myrcia_comp,
-    tree = myrcia_tree,
-    ancestral.area = list_node_area[[i]],
+    tree = tree,
+    ancestral.area = anc_area,
     biogeo = evo_mtx
   )
   
 })
+
 plan(sequential)
 
 
 
-range_names_disp_df <- map(l_myrcia_disp, colnames) %>% 
+range_names_disp_df <- purrr::map(l_myrcia_disp, colnames) %>% 
   unlist() %>% 
   unique() %>% 
   sort()
@@ -180,7 +202,7 @@ for(i in seq_along(l_myrcia_disp)){
   bsm_idx <- paste0("bsm_", i)
   df <- as.data.frame(l_myrcia_disp[[i]]) %>% 
     select(any_of(range_names_disp_df)) %>% 
-    rownames_to_column() %>% 
+    tibble::rownames_to_column() %>% 
     mutate(rowname = as.integer(rowname))
   
   disp_df <- disp_df %>% add_row(df)
@@ -191,7 +213,7 @@ for(i in seq_along(l_myrcia_disp)){
 disp_from_df_mean <- disp_df %>% 
   group_by(rowname) %>% 
   summarize(
-    across(all_of(range_names_disp_df), ~mean(.x, na.rm = T), .names = "mean_{.col}")
+    across(all_of(range_names_disp_df), ~mean(.x, na.rm = T)/sum(.x, na.rm = T), .names = "mean_{.col}")
   )
 
 disp_from_df_sd <- disp_df %>% 
@@ -202,8 +224,8 @@ disp_from_df_sd <- disp_df %>%
 
 
 disp_from_data <- list(
-  disp_from_df_mean, 
-  disp_from_df_sd
+  disp_from_df_mean = disp_from_df_mean, 
+  disp_from_df_sd = disp_from_df_sd
 )
 
 saveRDS(disp_from_data, here("output", "myrcia_disp_BSM.rds"))
