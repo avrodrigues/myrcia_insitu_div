@@ -10,22 +10,30 @@ library(pvclust)
 library(ggtree)
 library(tidytree)
 
+
+source("function/plot_cluster_pca.R")
+source("function/plot_cluster_pca_3d.R")
+
 # load data and theme ---------------------------------------------------------
 
 source(here("script", "fig", "fig_00_map_themes.R"))
-myrcia_disp <- readRDS(here("output", "myrcia_disp.rds"))
 theme_set(theme_void())
 
-# species composition
-myrcia_comp <- read.csv(here("data", "W.csv"))
 
-richness <- rowSums(myrcia_comp)
+myrcia_comp <- read.csv("data/W.csv")
 
-evo_metrics_df <- readRDS("output/evo_metrics_df.rds")
 
-evo_metrics_2 <- bind_cols(
-  evo_metrics_df, richness = richness, myrcia_disp
-)
+
+
+bsm_metrics <- read.csv("output/bg_stochastic_map/bsm_metrics.csv", row.names = 1)
+
+mpd_data <- readRDS("output/ses_mpd_myrcia.rds")
+
+evo_metrics_df <- data.frame(
+  bsm_metrics, 
+  ses_mpd = mpd_data$mpd.obs.z, 
+  richness = rowSums(myrcia_comp))
+
 
 sf::sf_use_s2(FALSE)
 
@@ -80,7 +88,7 @@ af_limits <- list(
 )
 
 evo_metrics_sf <- st_as_sf(
-  evo_metrics_2,
+  evo_metrics_df,
   coords = c("x","y"), 
   crs = st_crs(AF_sf)
 )
@@ -93,17 +101,17 @@ metrics_AF <-
   mutate(
     x = site_xy_AF[,1],
     y = site_xy_AF[,2],
-    .before = evoregion
+    .before = 1
   )
 
 # Clustering of in situ div, MPD and Age ----
 
 
 metrics_AF_std <- metrics_AF %>% 
-  select(x, y, age_halfedge, div_insitu_prop, ses_mpd) %>% 
-  mutate(across(age_halfedge:ses_mpd, scale))
+  select(x, y, age_bsm_mean, DR_prop_bsm_mean, ses_mpd, richness) %>% 
+  mutate(across(age_bsm_mean:richness, scale))
 
-mtr_data <- as.data.frame(metrics_AF_std[3:6])[,-4]
+mtr_data <- as.data.frame(metrics_AF_std[3:6])[,-5]
 
 
 # |- computing cluster and pca ----
@@ -116,13 +124,26 @@ summary(pca)
 
 # |- visualization ----
 metrics_AF_std <- metrics_AF_std %>% 
-  mutate(gr = as.factor(cutree(clust_af, 3)),
-         PC1 = pca$x[,1], 
-         PC2 = pca$x[,2])
+  mutate(
+    gr = as.factor(cutree(clust_af, 4)),
+    gr = case_when(
+      gr == "1" ~  "3",
+      gr == "2" ~  "4", 
+      gr == "3" ~  "1",
+      gr == "4" ~  "2"
+    ),
+    PC1 = pca$x[,1], 
+    PC2 = pca$x[,2],
+    PC3 = pca$x[,3]
+        ) 
 
-gr_col <- c("1" = "#a9344f", 
-            "2" = "#83a6c4", 
-            "3" = "#fcc573")
+
+
+gr_col <- c("3" = "#a9344f", 
+            "4" = "#83a6c4", 
+            "1" = "#fcc573",
+            "2" = "#7b5a28"
+            )
 
 
 ### |-- map ----
@@ -137,7 +158,7 @@ gr_map <- ggplot(metrics_AF_std) +
 
 
 ggsave(
-  "fig/cluster_map.png",
+  "fig/cluster_map_BSM.png",
   gr_map,
   width = 6.5,
   height = 8
@@ -146,12 +167,15 @@ ggsave(
 ### |-- cluster ----
 
 p <-  ggtree(clust_af) 
+clus <- metrics_AF_std$gr
 
-# map(1:3, \(gr){
-#   tidytree::MRCA(p$data, which(clus == gr) )
-# })
+# it takes some time to run 
+group_node <- map_dfr(1:4, \(gr){
+  tidytree::MRCA(p$data, which(clus == gr)) %>% 
+    suppressMessages()
+})
 
-d <- data.frame(node=c(574, 575, 573), type=c("1", "2", "3"))
+d <- data.frame(node=group_node$node, type=c("1", "2", "3", "4"))
 
 offspring_l <- map(d$node, \(id){
   offspring(p$data, id) %>% 
@@ -165,33 +189,22 @@ tree_data <- p$data %>%
       node %in% offspring_l[[1]] ~ "1", 
       node %in% offspring_l[[2]] ~ "2", 
       node %in% offspring_l[[3]] ~ "3", 
-    )
-  )
-
-clus <- cutree(clust_af, 3)
-
-
-tree_data <- p$data %>% 
-  mutate(
-    group = case_when(
-      node %in% offspring_l[[1]] ~ "1", 
-      node %in% offspring_l[[2]] ~ "2", 
-      node %in% offspring_l[[3]] ~ "3", 
+      node %in% offspring_l[[4]] ~ "4"
     )
   )
 
 cluster_dendrogram <- ggtree(
-    tree_data,
-    layout = "dendrogram",
-    aes(x = x, color= group), 
-    size = 1) +
+  tree_data,
+  layout = "dendrogram",
+  aes(x = x, color= group), 
+  size = 1) +
   scale_color_manual(values = gr_col, 
                      name = "Group") + 
-                     #label = c("Northern", "Central", "Southern")) +
+  #label = c("Northern", "Central", "Southern")) +
   theme(legend.position = "bottom")
 
 ggsave(
-  "fig/cluster.png", 
+  "fig/cluster_BSM.png", 
   cluster_dendrogram,
   width = 7,
   height = 6
@@ -200,58 +213,80 @@ ggsave(
 
 ### |-- PCA ----
 
-arw_df <- data.frame(
+arw_df_12 <- data.frame(
   x = 0, 
   y = 0, 
   xend =  pca$rotation[,1],
   yend = pca$rotation[,2], 
-  label = c("Age", "In Situ\nDiversification", "SES MPD")
+  label = c("Age", "DR prop", "SES MPD", "Richness")
+)
+
+arw_df_13 <- data.frame(
+  x = 0, 
+  y = 0, 
+  xend =  pca$rotation[,1],
+  yend = pca$rotation[,3], 
+  label = c("Age", "DR prop", "SES MPD", "Richness")
+)
+
+arw_df_23 <- data.frame(
+  x = 0, 
+  y = 0, 
+  xend =  pca$rotation[,2],
+  yend = pca$rotation[,3], 
+  label = c("Age", "DR prop", "SES MPD", "Richness")
 )
 
 t_adjust_pos <- 1.6
 
 pc_importance <- (summary(pca)$importance["Proportion of Variance",] %>% round(2)) * 100
 
-cluster_pca <- ggplot() +
-  geom_point(
-    data = metrics_AF_std,
-    aes(PC1, PC2, color = gr), 
-    pch = 16, 
-    #color = "white", 
-    size = 1, 
-    show.legend = F) +
-  geom_label(
-    data = arw_df, 
-    aes(x = xend * t_adjust_pos , y = yend * t_adjust_pos, label = label),
-    alpha = 0.7, 
-    size = 2.5,
-    fontface = "bold"
-    ) +
-  geom_segment(
-    data = arw_df, 
-    aes(x = x, y = y, xend = xend, yend = yend), 
-    arrow = arrow(length = unit(0.075, "inches")), 
-    linewidth = 0.5
-    ) +
-  scale_color_manual(values = gr_col) +
-  labs(
-    x = glue("PC1 ({pc_importance['PC1']}%)"),
-    y = glue("PC2 ({pc_importance['PC2']}%)")
-  ) +
-  coord_equal() +
-  theme_bw()
+# Axis 1 and 2
+pca_12 <- plot_cluster_pca(metrics_AF_std,
+                 arw_df_12, 
+                 pcs = c("PC1", "PC2"),
+                 gr_col = gr_col, 
+                 pc_importance = pc_importance, 
+                 t_adjust_pos = 1.6)
+
+# Axis 1 and 3
+pca_13 <- plot_cluster_pca(metrics_AF_std,
+                           arw_df_13, 
+                           pcs = c("PC1", "PC3"),
+                           gr_col = gr_col, 
+                           pc_importance = pc_importance, 
+                           t_adjust_pos = 1.6)
+
+# Axis 2 and 3
+pca_23 <- plot_cluster_pca(metrics_AF_std,
+                           arw_df_23, 
+                           pcs = c("PC2", "PC3"),
+                           gr_col = gr_col, 
+                           pc_importance = pc_importance, 
+                           t_adjust_pos = 1.6)
+
+
+design <- "
+  1#
+  23
+"
+
+cluster_pca <- pca_12 + pca_13 + pca_23 + 
+  plot_layout(design = design, axis_titles = 'collect')
+
+
 
 
 
 ggsave(
-  "fig/cluster_pca.png", 
+  "fig/cluster_pca_BSM.png", 
   cluster_pca,
-  width = 5,
-  height = 4
+  width = 8,
+  height = 6
 )
 
-cluster_pca$layers[[2]] <- NULL
-cluster_pca$layers[[3]] <- NULL
+pca_12$layers[[2]] <- NULL
+pca_12$layers[[3]] <- NULL
 
 theme_tiny <- list(
   theme(
@@ -261,11 +296,34 @@ theme_tiny <- list(
 )
 
 
-cluster_pca + theme_tiny
+pca_12 + theme_tiny
 
 ggsave(
-  "fig/cluster_pca_tiny.png", 
-  cluster_pca + theme_tiny,
+  "fig/cluster_pca_tiny_BSM.png", 
+  pca_12 + theme_tiny,
   width = 3,
   height = 2.25
+)
+
+
+## |-- PCA 3D
+
+arw_df <- data.frame(
+  x = 0, 
+  y = 0, 
+  z = 0,
+  xend =  pca$rotation[,1],
+  yend = pca$rotation[,2], 
+  zend = pca$rotation[,3],
+  label = c("Age", "DR prop", "SES MPD", "Richness")
+)
+
+# only for interactive vizualization
+plot_cluster_pca_3d(
+  metrics_AF_std,
+  arw_df = arw_df,   # must contain x, y, z, xend, yend, zend, label
+  pcs = c("PC1", "PC2", "PC3"),
+  gr_col = gr_col,
+  pc_importance = pc_importance,
+  t_adjust_pos = 1.2
 )

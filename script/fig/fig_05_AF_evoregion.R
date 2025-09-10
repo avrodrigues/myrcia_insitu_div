@@ -20,7 +20,7 @@ myrcia_disp <- readRDS(here("output", "myrcia_disp.rds"))
 theme_set(theme_bw())
 
 evo_metrics_2 <- bind_cols(
-  evo_metrics_df,  myrcia_disp
+  evo_metrics_df
 )
 
 sf::sf_use_s2(FALSE)
@@ -136,18 +136,19 @@ theme_map_ <- function(base_text_size = 10) {
 
 # map evoregion -----------------------------------------------------------
 
-map_evo <- 
+(map_evo <- 
 evo_metrics_df %>%
   ggplot() + 
   coast_layer +
-   geom_raster(aes(x = x, y = y, fill = evoregion), show.legend = F) +
+   geom_raster(aes(x = x, y = y, fill = phy_con), show.legend = T) +
    scale_fill_manual(values = colors_evo) + 
-  #geom_sf(data = AF_sf, alpha = 0.8, fill = greys[2]) +
+  #geom_sf(data = AF_sf, color = greys[5], fill = NA, linewidth = 1) +
   coord_sf(
     xlim = map.limits$x, # c(-90, -34), 
     ylim = map.limits$y #c(-55, 15)) +
   ) +
   theme_map_()
+)
 
 
 # map AF ------------------------------------------------------------------
@@ -167,10 +168,10 @@ map_SA_af <-
 
 # Map_evo_af ---- 
 map_evo_af <- 
-metrics_AF %>%
+data.frame(st_coordinates(metrics_AF), metrics_AF) %>%
   ggplot() +
   #geom_sf(data = sf_coast_pol, fill = greys[9], color = greys[3]) +
-  geom_raster(aes(x = x, y = y, fill = evoregion)) +
+  geom_raster(aes(x = X, y = Y, fill = phy_con)) +
   scale_fill_manual(
     values = colors_evo, 
     name = "Evoregions", 
@@ -255,6 +256,14 @@ elev_plot_states <- elev_plot +
 
 
 # Save maps ---------------------------------------------------------------
+ggsave(
+  here("fig", "map_evo.png"),
+  map_evo, 
+  width = 6.5,
+  height = 8
+)
+
+
 ggsave(
   here("fig", "map_evo_af.png"),
   map_evo_af, 

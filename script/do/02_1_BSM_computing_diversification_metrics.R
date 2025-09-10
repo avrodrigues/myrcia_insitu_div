@@ -42,8 +42,7 @@ bsm_res <- calc_bsm(
   tree.path = phy.path,
   max.maps = 100, 
   n.maps.goal = 100,
-  seed = 1234,
-  save_after_every_try = FALSE
+  seed = 1234
 )
 
 # assemblage age and in situ diversification ---------------------------------
@@ -93,9 +92,9 @@ l_age_comm <- future_map(bsm_tree, function(bsm_map){
 
 plan(sequential)
 
-l_avg_age_recent <- purrr::map(l_age_comm_recent, function(x) x$mean_age_per_assemblage)
-avg_age_recent_df <- purrr::list_cbind(l_avg_age_recent)
-names(avg_age_recent_df) <- paste0("bsm_", 1:ncol(avg_age_recent_df))
+l_avg_age <- purrr::map(l_age_comm, function(x) x$mean_age_per_assemblage)
+avg_age_df <- purrr::list_cbind(l_avg_age)
+names(avg_age_df) <- paste0("bsm_", 1:ncol(avg_age_df))
 
 # Organize results
 age_bsm_mtx <- sapply(
@@ -103,13 +102,6 @@ age_bsm_mtx <- sapply(
   function(x) x$mean_age_per_assemblage$mean_age_arrival
 )
 
-# summarize results
-
-bsm_metrics <- cbind(
-  evo_df, 
-  age_bsm_mean = rowMeans(age_bsm_mtx),
-  age_bsm_sd = apply(age_bsm_mtx, 1, sd)
-)
 
 
 # calculating in situ diversification -----
@@ -119,41 +111,53 @@ l_div_insitu <- future_map(bsm_tree, function(bsm_map){
   
   tree <- bsm_map$phylo
   #tree$node.label <- NULL
-  anc_area <- bsm_map$node_area %>% as.matrix()
+  anc_area <- bsm_map$node_area 
   
-  Herodotools::calc_insitu_diversification(
-    W = myrcia_comp,
+  calc_insitu_diversification(
+    W = as.matrix(myrcia_comp),
     tree = tree, 
     ancestral.area = anc_area, 
     biogeo = evo_mtx, 
-    diversification = "jetz",
     type = "equal.splits"
   )
   
 })
+plan(sequential)
 
 
+l_DR_jetz <- purrr::map(l_div_insitu, function(x) 
+  data.frame(DR_jetz = x$jetz_comm_mean))
 
-l_div_jetz <- purrr::map(l_div_insitu, function(x) 
-  data.frame(div_jetz = x$Jetz_harmonic_mean_site))
+DR_jetz_df <- purrr::list_cbind(l_DR_jetz)
+names(DR_jetz_df) <- paste0("bsm_", 1:ncol(DR_jetz_df))
 
-div_jetz_df <- purrr::list_cbind(l_div_jetz)
-names(div_jetz_df) <- paste0("bsm_", 1:ncol(div_jetz_df))
+# Jetz in not dependend on the BSM models, so it should not change
+max(apply(DR_jetz_df, 1, sd))
+# SD across BSM models shows max sd as 1.005783e-17, which is negligible variation
 
+l_DR_insitu <- purrr::map(l_div_insitu, function(x) 
+  data.frame(DR_insitu = x$insitu_comm_mean))
 
-l_div_mb_jetz <- purrr::map(l_div_insitu, function(x) 
-  data.frame(div_mb_jetz = x$insitu_Jetz_harmonic_mean_site))
+DR_insitu_df <- purrr::list_cbind(l_DR_insitu)
+names(DR_insitu_df) <- paste0("bsm_", 1:ncol(l_DR_insitu))
 
-div_mb_jetz_df <- purrr::list_cbind(l_div_mb_jetz)
-names(div_mb_jetz_df) <- paste0("bsm_", 1:ncol(div_mb_jetz_df))
+l_DR_prop <- purrr::map(l_div_insitu, function(x) 
+  data.frame(div_insitu = x$prop_comm_mean))
 
-div_insitu_prop_df <- div_mb_jetz_df/div_jetz_df
+DR_prop_df <- purrr::list_cbind(l_DR_prop)
+names(DR_prop_df) <- paste0("bsm_", 1:ncol(DR_prop_df))
 
+## summarize results ----
 
 bsm_metrics <- cbind(
-  bsm_metrics, 
-  div_bsm_mean = rowMeans(div_insitu_prop_df),
-  div_bsm_sd = apply(div_insitu_prop_df, 1, sd)
+  evo_df, 
+  age_bsm_mean = rowMeans(age_bsm_mtx),
+  age_bsm_sd = apply(age_bsm_mtx, 1, sd),
+  DR_jetz = DR_jetz_df[,1],
+  DR_insitu_bsm_mean = rowMeans(DR_insitu_df, na.rm = T),
+  DR_insitu_bsm_sd = apply(DR_insitu_df, 1, sd, na.rm = T),
+  DR_prop_bsm_mean = rowMeans(DR_prop_df),
+  DR_prop_bsm_sd = apply(DR_prop_df, 1, sd)
 )
 
 # save dataframe
