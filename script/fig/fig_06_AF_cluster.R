@@ -21,6 +21,8 @@ myrcia_comp <- read.csv(here("data", "W.csv"))
 
 richness <- rowSums(myrcia_comp)
 
+evo_metrics_df <- readRDS("output/evo_metrics_df.rds")
+
 evo_metrics_2 <- bind_cols(
   evo_metrics_df, richness = richness, myrcia_disp
 )
