@@ -5,6 +5,7 @@
 
 <!-- badges: start -->
 
+[![DOI](https://zenodo.org/badge/DOI/10.5281/zenodo.14171268.svg)](https://doi.org/10.5281/zenodo.14171268)
 <!-- badges: end -->
 
 Here you find code and data to reproduce the analysis of the manuscript
@@ -28,6 +29,7 @@ concluded.
     #> .
     #> ├── data
     #> ├── fig
+    #> ├── function
     #> ├── LICENSE
     #> ├── myrcia_insitu_div.Rproj
     #> ├── output
