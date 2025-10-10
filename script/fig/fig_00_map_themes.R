@@ -8,7 +8,7 @@ library(sf)
 
 # load data ---------------------------------------------------------------
 
-evo_metrics_df <- readRDS(here("output", "evo_metrics_df.rds"))
+evo_metrics_df <- read.csv("data/evoregions_stand_names_df.csv")
 
 
 # |- continent and limits ----

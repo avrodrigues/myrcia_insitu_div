@@ -9,8 +9,8 @@
 <!-- badges: end -->
 
 Here you find code and data to reproduce the analysis of the manuscript
-entitled “A complex biogeographical history explains the spatial
-distribution of *Myrcia* diversity in the Atlantic Forest”
+entitled “The relative roles of in situ diversification and lineage
+dispersal underlying diversity patterns at the assemblage level”
 
 ## Setting the environment
 
