@@ -90,7 +90,7 @@ init_matrix <- matrix(
 )
 
 # bamm site means ---------------------------------------------------------
-bamm_lambda  <- setNames(tip_rates_df$lambda, tip_rates_df$tip)
+bamm_lambda  <- setNames(tip_rates_df$net_div_rate, tip_rates_df$tip)
 bamm_site_sp <- init_matrix
 
 for (sp in colnames(W)) {
