@@ -5,6 +5,10 @@ library(here)
 library(caper)
 library(tidyverse)
 library(Herodotools)
+library(ggtree)
+library(glue)
+
+source("script/fig/fig_00_map_themes.R")
 
 # load data ---------------------------------------------------------------
 evo_df  <- read.csv(here("data", "evoregions_stand_names_df.csv"))
@@ -14,6 +18,11 @@ evo_mtx <- evo_df[, -c(1:2)]
 W <- read.csv(here("data", "W.csv"))
 
 tree <- read.tree(here("data", "000_phy_myrcia_cleaned_consensus.new"))
+
+# Atlantic Forest Integrated Limits - Muylaert et al 2018
+AF_sf <- read_sf(
+  here::here("data", "shape", "limits_AF", 
+             "ma_limite_integrador_muylaert_et_al_2018_wgs84.shp"))
 
 # bamm event data ---------------------------------------------------------
 edata <- getEventData(
@@ -43,7 +52,7 @@ jetz_sp  <- 1 / ed_total
 
 # compare tip rates -------------------------------------------------------
 plot(jetz_sp, tip_rates_df$net_div_rate)
-cor.test(jetz_sp, tip_rates_df$net_div_rate)
+cor_dr <- cor.test(jetz_sp, tip_rates_df$net_div_rate)
 
 df_rates <- data.frame(tip_rates_df, jetz_sp)
 
@@ -55,6 +64,23 @@ comp_data <- comparative.data(
 
 pgls(jetz_sp ~ lambda, comp_data) %>% summary()
 
+plot_df_rates <- ggplot(df_rates) +
+  geom_point(aes(jetz_sp, net_div_rate)) +
+  theme_bw() +
+  labs(
+    title = "Tip-based diversification estimates", 
+    subtitle = glue("r = {round(cor_dr$estimate, 2)}"),
+    x = "DR (Jetz)", 
+    y = "Net diversification rate (BAMM)")
+
+
+ggsave(
+  "fig/df_rate_plot.png", 
+  plot_df_rates, 
+  width = 5, 
+  height = 5
+)
+
 # prepare matrices --------------------------------------------------------
 init_matrix <- matrix(
   NA,
@@ -64,7 +90,7 @@ init_matrix <- matrix(
 )
 
 # bamm site means ---------------------------------------------------------
-bamm_lambda  <- setNames(tip_rates_df$net_div_rate, tip_rates_df$tip)
+bamm_lambda  <- setNames(tip_rates_df$lambda, tip_rates_df$tip)
 bamm_site_sp <- init_matrix
 
 for (sp in colnames(W)) {
@@ -96,17 +122,35 @@ site_mean_div <- tibble(
   jetz_comm_mean = jetz_comm_mean
 )
 
+
+# create a theme
+theme_bamm_dr <- list(
+  scale_fill_viridis_c(),
+  geom_sf(data = sf_coast, color = greys[5]),
+  geom_sf(data = AF_sf, fill = NA,  color = greys[2]),
+  theme_map_continuous 
+)
+
 # plot bamm ---------------------------------------------------------------
-ggplot(site_mean_div, aes(x, y, fill = bamm_comm_mean)) +
-  geom_tile() +
-  scale_fill_viridis_c() +
-  coord_equal()
+plot_bamm <- ggplot() +
+  geom_raster(data = site_mean_div, aes(x = x, y = y, fill = bamm_comm_mean)) +
+  theme_bamm_dr +
+  labs(fill = "BAMM comm. avg ")
 
 # plot jetz ---------------------------------------------------------------
-ggplot(site_mean_div, aes(x, y, fill = jetz_comm_mean)) +
-  geom_tile() +
-  scale_fill_viridis_c() +
-  coord_equal()
+plot_jetz <-ggplot() +
+  geom_raster(data = site_mean_div, aes(x, y, fill = jetz_comm_mean)) +
+  theme_bamm_dr +
+  labs(fill = "Jetz comm. avg ")
 
+
+plot_bamm + plot_jetz
+
+ggsave(
+  "fig/map_bamm_dr.png", 
+  plot_bamm + plot_jetz, 
+  width = 12, 
+  height = 7
+)
 
 cor(site_mean_div$jetz_comm_mean, site_mean_div$bamm_comm_mean)
