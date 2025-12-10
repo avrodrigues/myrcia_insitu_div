@@ -1,0 +1,11 @@
+runInfoFilename              = runInfo.txt
+treefile                     = data/000_phy_myrcia_cleaned_consensus.new
+eventDataOutfile             = event_data.txt
+mcmcOutfile                  = mcmc_out.txt
+priors                       = priorfile.txt
+sampleFile                   = sampling_fractions.csv
+expectedNumberOfShifts       = 1
+deltaT                       = 0.01
+numIterations                = 5000000
+printFreq                    = 10000
+sampleFreq                   = 10000
