@@ -111,14 +111,14 @@ map_age <-
     name = "Mean age (BSM)" ,
     colours = cont_cols
   ) +
-  labs(title = "Age of assemblages") +
+  labs(title = "Colonization Age") +
   theme_map_af
 
 
 # check range values
 range(evo_metrics_AF$age_bsm_sd/evo_metrics_AF$age_bsm_mean)
 
-# add values arround it to the code below
+# add values around it to the code below
 break_vec_age <- exp(seq(log(0.1), log(4.1), length.out = 5)) %>% 
   round(2)
 
@@ -129,10 +129,10 @@ map_age_cv <-
   scale_fill_stepsn(
     breaks = break_vec_age,
     limits = range(break_vec_age),
-    name = "CV age of assemblage (BSM)" ,
+    name = "CV colonization Age (BSM)" ,
     colours = cont_cols
   ) +
-  labs(title = "Age of assemblages") +
+  labs(title = "Colonization Age") +
   theme_map_af
 
 
@@ -308,6 +308,13 @@ chart_insitu <- combine_inset_plots(
 
 ggsave(
   here("fig", "chart_insitu_BSM.png"), 
+  chart_insitu, 
+  width = 7,
+  height = 3.5
+)
+
+ggsave(
+  here("fig", "chart_insitu_BSM.pdf"), 
   chart_insitu, 
   width = 7,
   height = 3.5
